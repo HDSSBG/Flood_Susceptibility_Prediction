@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata xml:lang="en"><Esri><CreaDate>20211123</CreaDate><CreaTime>09565500</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce><DataProperties><lineage><Process ToolSource="d:\arcgis_10.8\arcgis 10.8\desktop10.8\ArcToolbox\Toolboxes\Conversion Tools.tbx\PolygonToRaster" Date="20211123" Time="095655">PolygonToRaster Brahmaputra_India_ROI FID_hydr_2 E:\IIT_GN\Academics\Sem_7\CE_499\code\Data\Brahmaputra\training_data\Brahmaputra_Area.tif CELL_CENTER NONE 3300</Process></lineage></DataProperties></Esri></metadata>
