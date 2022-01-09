@@ -1,4 +1,4 @@
-In this repository, we have tried to develop a scalable flood susceptibility model using the machine learning algorithms.
+In this repository, we have tried to develop a scalable flood susceptibility model using machine learning algorithms.
 
 ML Algorithms: Support Vector Machine, Dagging Classification
 
