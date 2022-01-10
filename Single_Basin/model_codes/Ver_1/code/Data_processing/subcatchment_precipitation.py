@@ -5,29 +5,17 @@ from netCDF4 import Dataset
 from pysheds.grid import Grid
 #from pysheds.pgrid import Grid as Grid
 
-def read_netCDF_data(prec_file, id_x, id_y, out_var):
+def read_netCDF_data(lat, lon, lon_arr, lat_arr, im):
     z = 0
 
     ##### Read netCDF
-    read_data=Dataset(prec_file,'r')
-    var=list(read_data.variables.keys())
+    
 
-    read_lat = read_data.variables['lat'][:]
-    #print(read_lat)
-    #read_lat = read_lat[:]
-    read_lon = read_data.variables['lon'][:]
-    #print(read_lon)
-    im = read_data.variables[out_var][:]
-    #print(im)
+    diff_arr_x = np.absolute(lon_arr-lon)
+    id_x = diff_arr_x.argmin() # find the index of minimum element from the array
 
-    lon_arr = read_lon[:]
-    lat_arr = read_lat[:]
-
-    # diff_arr_x = np.absolute(lon_arr-lon)
-    # id_x = diff_arr_x.argmin() # find the index of minimum element from the array
-
-    # diff_arr_y = np.absolute(lat_arr-lat)
-    # id_y = diff_arr_y.argmin() # find the index of minimum element from the array
+    diff_arr_y = np.absolute(lat_arr-lat)
+    id_y = diff_arr_y.argmin() # find the index of minimum element from the array
 
     # print(id_x, id_y)
 
@@ -37,84 +25,57 @@ def read_netCDF_data(prec_file, id_x, id_y, out_var):
 
     return z
 
-def find_acc_prec(final_list):
-    prec_file = "E:\\IIT_GN\\Academics\\Sem_7\\CE_499\\code\\Data\\Brahmaputra\\input_layers\\netCDF\\Precipitation.nc"
-    out_var = 'Band1'
+# def find_acc_prec(im, lat_arr, lon_arr, im_ele, lat_arr_ele, lon_arr_ele):
 
-    acc_prec = 0
-    for i in range(len(final_list)):
-        for j in range(len(final_list[i])):
-            if(np.isnan(final_list[i][j]) == False and int(final_list[i][j]) == 1):
-                val = read_netCDF_data(prec_file, j, i, out_var)
-                if(np.isnan(val)==False):
-                    val = float(val)
-                    acc_prec += val
+#     acc_prec = 0
+#     final_list = np.array(im_ele)
+#     results = np.where(final_list == 1)
+#     listOfCoordinates= list(zip(results[0], results[1]))
+
+#     for coords in listOfCoordinates:
+#         lat = lat_arr_ele[coords[0]]
+#         lon = lon_arr_ele[coords[1]]
+#         # print(lat, lon)
+#         val = read_netCDF_data(lat, lon, lon_arr, lat_arr, im)
+#         if(np.isnan(val)==False):
+#             val = float(val)
+#             acc_prec += val
                 
-    return acc_prec
+#     return acc_prec
 
-def delineation(dem_file, pour_loc):
-    grid = Grid.from_raster(dem_file)
-    dem = grid.read_raster(dem_file)
+def find_acc_prec1(loc, im, lat_arr, lon_arr, im_ele, lat_arr_ele, lon_arr_ele):
+    val = 0
 
-    # Fill depressions in DEM
-    flooded_dem = grid.fill_depressions(dem)
-    
-    # Resolve flats in DEM
-    inflated_dem = grid.resolve_flats(flooded_dem)
+    x = read_netCDF_data(loc[1], loc[0], lon_arr_ele, lat_arr_ele, im_ele)
 
-    # Specify directional mapping
-    dirmap = (64, 128, 1, 2, 4, 8, 16, 32)
-    
-    # Compute flow directions
-    fdir = grid.flowdir(inflated_dem, dirmap=dirmap)
+    if(x == 1):
+        val = read_netCDF_data(loc[1], loc[0], lon_arr, lat_arr, im)
 
-    # flow accumulation
-    acc = grid.accumulation(fdir, dirmap=dirmap)
+    return val
 
-    # Delineate a catchment
-    # Specify pour point
-    x_pour, y_pour = pour_loc[0], pour_loc[1]
-
-    # Snap pour point to high accumulation cell
-    #x_pour, y_pour = grid.snap_to_mask(acc > 10, (x_pour, y_pour))
-
-    # Delineate the catchment
-    catch = grid.catchment(x=x_pour, y=y_pour, fdir=fdir, dirmap=dirmap, 
-                            xytype='coordinate')
-
-    # Crop and plot the catchment
-    # ---------------------------
-    # Clip the bounding box to the catchment
-    # grid.clip_to(catch)
-    # catch = grid.view(catch)
-
-    final_list = np.where(catch, catch, np.nan)
-    #print(final_list)
-
-    acc_rainfall = find_acc_prec(final_list)
-
-    #print(acc_rainfall)
-
-    return acc_rainfall
-
-file_path = 'E:\\IIT_GN\\Academics\\Sem_7\\CE_499\\code\\Data\\Brahmaputra\\input_layers\\netCDF\\'
-dem_data = 'Filled_DEM.tif'
+file_path = 'E:\IIT_GN\Academics\Sem_8\CE_499\Single_basin\Single_Basin\model_codes\Ver_1\code\Data\Brahmaputra\subcatchment\\netCDF\\'
 Basin_name = 'Brahmaputra'
+out_var = 'Band1'
 
-dem_file = file_path+dem_data
-
-path_coords_read = 'E:\IIT_GN\Academics\Sem_7\CE_499\\code\\Data\\'+str(Basin_name)+'\\grids\\'+str(Basin_name)+'_grid.csv'
+path_coords_read = 'E:\IIT_GN\Academics\Sem_8\CE_499\Single_basin\Single_Basin\model_codes\Ver_1\code\Data\\'+str(Basin_name)+'\\grids\\'+str(Basin_name)+'_grid.csv'
 
 matrix_coords = pd.read_csv(path_coords_read, header=1).to_numpy()
 matrix_coords = matrix_coords.astype('float64')
-# print(matrix_coords)
 matrix_coords = matrix_coords[matrix_coords[:, 1].argsort()]
 
-prev_file = "E:\\IIT_GN\\Academics\\Sem_7\\CE_499\\code\\Data\\Brahmaputra\\input_layers\\netCDF\\Precipitation.nc"
-read_data=Dataset(prev_file,'r')
+prec_file = "E:\IIT_GN\Academics\Sem_8\CE_499\Single_basin\Single_Basin\model_codes\Ver_1\code\Data\Brahmaputra\\input_layers\\netCDF\\Precipitation.nc"
+read_data=Dataset(prec_file,'r')
 var=list(read_data.variables.keys())
+
 read_lat = read_data.variables['lat'][:]
 read_lon = read_data.variables['lon'][:]
+im = read_data.variables[out_var][:]
+#print(im)
+
+lon_arr = read_lon[:]
+lat_arr = read_lat[:]
+
+scaling = (0.01/0.25)**2
 
 lonrect = read_lon[:]
 latrect = read_lat[:]
@@ -122,8 +83,31 @@ latrect = read_lat[:]
 l = np.full((len(latrect), len(lonrect)), None)
 
 
+# for i in range(len(matrix_coords)):
+#     pour_loc = [matrix_coords[i,0], matrix_coords[i,1]]
+
+#     diff_arr_x = np.absolute(lonrect-matrix_coords[i,0])
+#     id_x = diff_arr_x.argmin() # find the index of minimum element from the array
+
+#     diff_arr_y = np.absolute(latrect-matrix_coords[i,1])
+#     id_y = diff_arr_y.argmin() # find the index of minimum element from the array
+
+#     prev_ele_file = "E:\IIT_GN\Academics\Sem_8\CE_499\Single_basin\Single_Basin\model_codes\Ver_1\code\Data\Brahmaputra\subcatchment\\netCDF\\subcatchment_"+str(i)+".nc"
+
+#     read_data=Dataset(prev_ele_file,'r')
+#     var=list(read_data.variables.keys())
+
+#     read_lat = read_data.variables['lat'][:]
+#     read_lon = read_data.variables['lon'][:]
+#     im_ele = read_data.variables[out_var][:]
+
+#     lon_arr_ele = read_lon[:]
+#     lat_arr_ele = read_lat[:]
+
+#     temp_val = find_acc_prec(im, lat_arr, lon_arr, im_ele, lat_arr_ele, lon_arr_ele)*scaling
+#     l[id_y, id_x] = temp_val
+
 for i in range(len(matrix_coords)):
-    pour_loc = [matrix_coords[i,0], matrix_coords[i,1]]
 
     diff_arr_x = np.absolute(lonrect-matrix_coords[i,0])
     id_x = diff_arr_x.argmin() # find the index of minimum element from the array
@@ -131,10 +115,28 @@ for i in range(len(matrix_coords)):
     diff_arr_y = np.absolute(latrect-matrix_coords[i,1])
     id_y = diff_arr_y.argmin() # find the index of minimum element from the array
 
-    temp_val = delineation(dem_file, pour_loc)
+    prev_ele_file = "E:\IIT_GN\Academics\Sem_8\CE_499\Single_basin\Single_Basin\model_codes\Ver_1\code\Data\Brahmaputra\subcatchment\\netCDF\\subcatchment_"+str(i)+".nc"
+
+    read_data=Dataset(prev_ele_file,'r')
+    var=list(read_data.variables.keys())
+
+    read_lat = read_data.variables['lat'][:]
+    read_lon = read_data.variables['lon'][:]
+    im_ele = read_data.variables[out_var][:]
+
+    lon_arr_ele = read_lon[:]
+    lat_arr_ele = read_lat[:]
+
+    temp_val = 0
+    for j in range(len(matrix_coords)):
+        loc = [matrix_coords[j,0], matrix_coords[j,1]]
+        temp = find_acc_prec1(loc, im, lat_arr, lon_arr, im_ele, lat_arr_ele, lon_arr_ele)
+        if(np.isnan(temp) == False):
+            temp_val += temp
+    
     l[id_y, id_x] = temp_val
 
-path_save = 'E:\\IIT_GN\\Academics\\Sem_7\\CE_499\\code\\Data\\Brahmaputra\\input_layers\\netCDF\\'
+path_save = 'E:\\IIT_GN\\Academics\\Sem_8\\CE_499\\Single_basin\\Single_Basin\\model_codes\\Ver_1\\code\Data\\Brahmaputra\\input_layers\\netCDF\\'
 
 ds=Dataset(path_save+'Accumulated_Precipitation.nc', mode="w", format='NETCDF4')
 # some file-level meta-data attributes:
